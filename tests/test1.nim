@@ -12,5 +12,10 @@ from joydata/submodule import foo
 macro owningModule(sym: typed): untyped =
   $(owner(owner(sym))) & "." & $(owner(sym))
 
+macro owningModule() : untyped =
+  var
+    sym: int
+  owningModule(sym)
+
 test "owningModule":
-  echo owningModule(foo)
+  echo owningModule()
