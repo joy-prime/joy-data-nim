@@ -7,7 +7,7 @@
 
 import macros
 import unittest
-from joydata/submodule import foo
+from joyprime/submodule import foo
 
 macro owningModule(sym: typed): untyped =
   $(owner(owner(sym))) & "." & $(owner(sym))
