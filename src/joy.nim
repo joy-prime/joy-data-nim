@@ -1,10 +1,10 @@
 import macros
 
-proc isJoyValue(x: int): bool = true
+proc isJoyValue(x: int): void = discard
 
 type
   Value = concept v
-    v.isJoyValue() is bool
+    v.isJoyValue()
 
 macro field*[T: Value](name: untyped, ty: typedesc[T]): untyped =
   echo treeRepr(getType(ty))
