@@ -20,9 +20,12 @@ type
   JoyValue* = concept v
     v.isJoyValue()
 
-  JoyField[T] = tuple[qualifiedName: string, typeDummy: T]
+  JoyField[T] = tuple[qualifiedName: string, dummyValue: T]
 
 const JoyQualifiedNameSep* = "¦"
+
+proc joyValueDefault*[T](): T =
+  result
 
 macro joyFieldHelper[T: JoyValue](name: untyped, 
                                   typ: type[T],
@@ -40,11 +43,11 @@ macro joyFieldHelper[T: JoyValue](name: untyped,
       module = module.owner
   let qualifiedNameNode = newStrLitNode(qualifiedName)
   let typeNode = getTypeInst(typ)[1]
-  var tdummy: T
-  let fieldConstructionNode = quote do: (`qualifiedName`, `tdummy`)
+  let fieldConstructionNode = quote:
+    (qualifiedName: `qualifiedName`,
+     dummyValue: joyValueDefault[`typeNode`]())
   result = quote:
-    var
-      `name`*: JoyField[`typeNode`] = `fieldConstructionNode`
+    const `name`*: JoyField[`typeNode`] = `fieldConstructionNode`
   debugEcho "==== joyFieldHelper.result\n", result.repr
 
 template field*[T: JoyValue](name: untyped, typ: type[T]): untyped =
