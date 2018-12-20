@@ -1,10 +1,13 @@
 import macros
 import unittest
-from joy import nil
+import joy
 
-joy.field(foo, int)
+#field(name, string)
+field(age, int)
 
-# joy.field(bar, string)
+#data(Person, name, age)
 
-test "foo":
-  echo "We win!"
+test "construct a data value and read fields":
+  #let fred = make(Person, name = "Fred", age = 12)
+  dumpTree:
+    assertEquals(fred./age, 12)
