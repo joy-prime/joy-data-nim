@@ -13,23 +13,19 @@
 
 import macros
 
-proc isJoyValue(x: int): void = discard
-proc isJoyValue(x: string): void = discard
-
 type
-  JoyValue* = concept v
-    v.isJoyValue()
-
-  JoyField[T] = tuple[qualifiedName: string, dummyValue: T]
+  JoyField*[T] = object
+    qualifiedName*: string
+    dummyValue*: T
 
 const JoyQualifiedNameSep* = "¦"
 
 proc joyValueDefault*[T](): T =
   result
 
-macro joyFieldHelper[T: JoyValue](name: untyped, 
-                                  typ: type[T],
-                                  dummyInScope: typed): untyped =
+macro joyFieldHelper[T](name: untyped, 
+                        typ: type[T],
+                        dummyInScope: typed): untyped =
   expectKind(name, nnkIdent)
   expectKind(dummyInScope, nnkSym)
 
@@ -43,14 +39,13 @@ macro joyFieldHelper[T: JoyValue](name: untyped,
       module = module.owner
   let qualifiedNameNode = newStrLitNode(qualifiedName)
   let typeNode = getTypeInst(typ)[1]
-  let fieldConstructionNode = quote:
-    (qualifiedName: `qualifiedName`,
-     dummyValue: joyValueDefault[`typeNode`]())
   result = quote:
-    const `name`*: JoyField[`typeNode`] = `fieldConstructionNode`
-  debugEcho "==== joyFieldHelper.result\n", result.repr
+    const `name`* = 
+      JoyField[`typeNode`](qualifiedName: `qualifiedName`,
+                           dummyValue: joyValueDefault[`typeNode`]())
+  debugEcho "==== joyFieldHelper.result\n", result.treeRepr
 
-template field*[T: JoyValue](name: untyped, typ: type[T]): untyped =
+template field*[T](name: untyped, typ: type[T]): untyped =
   let dummy = 0
   joyFieldHelper(name, typ, dummy)
 
