@@ -2,12 +2,7 @@ import macros
 import unittest
 import joy
 
-#field(name, string)
-dumpTree:
-  const 
-    age2* = JoyField[int](qualifiedName: "joy¦test_all¦age", 
-                          dummyValue: joyValueDefault[int]())
-
+const name* = (qualifiedName: "joy¦test_all¦name")
 field(age, int)
 
 #data(Person, name, age)

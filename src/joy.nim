@@ -14,19 +14,15 @@
 import macros
 
 type
-  JoyField*[T] = object
-    qualifiedName*: string
-    dummyValue*: T
+  JoyField*[T] = tuple[qualifiedName: string]
 
 const JoyQualifiedNameSep* = "¦"
 
-proc joyValueDefault*[T](): T =
-  result
-
-macro joyFieldHelper[T](name: untyped, 
-                        typ: type[T],
-                        dummyInScope: typed): untyped =
+macro joyFieldHelper(name: untyped, 
+                     typ: untyped,
+                     dummyInScope: typed): untyped =
   expectKind(name, nnkIdent)
+  expectKind(typ, nnkIdent)
   expectKind(dummyInScope, nnkSym)
 
   var qualifiedName = name.repr
@@ -38,16 +34,25 @@ macro joyFieldHelper[T](name: untyped,
       qualifiedName = module.repr & JoyQualifiedNameSep & qualifiedName
       module = module.owner
   let qualifiedNameNode = newStrLitNode(qualifiedName)
-  let typeNode = getTypeInst(typ)[1]
-  result = quote:
-    const `name`* = 
-      JoyField[`typeNode`](qualifiedName: `qualifiedName`,
-                           dummyValue: joyValueDefault[`typeNode`]())
-  debugEcho "==== joyFieldHelper.result\n", result.treeRepr
+  result = 
+    nnkStmtList.newTree(
+      nnkConstSection.newTree(
+        nnkConstDef.newTree(
+          nnkPostfix.newTree(
+            newIdentNode("*"),
+            name
+          ),
+          newEmptyNode(),
+          nnkPar.newTree(
+            nnkExprColonExpr.newTree(
+              newIdentNode("qualifiedName"),
+              qualifiedNameNode
+            )
+          )
+        )
+      )
+    )
 
-template field*[T](name: untyped, typ: type[T]): untyped =
+template field*(name: untyped, typ: untyped): untyped =
   let dummy = 0
   joyFieldHelper(name, typ, dummy)
-
-macro field*(name: untyped, typ: untyped): untyped =
-  error "Unsupported Joy value type: " & repr(typ)
