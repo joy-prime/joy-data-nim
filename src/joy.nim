@@ -18,41 +18,57 @@ type
 
 const JoyQualifiedNameSep* = "¦"
 
-macro joyFieldHelper(name: untyped, 
-                     typ: untyped,
-                     dummyInScope: typed): untyped =
-  expectKind(name, nnkIdent)
-  expectKind(typ, nnkIdent)
-  expectKind(dummyInScope, nnkSym)
-
-  var qualifiedName = name.repr
-  var module = dummyInScope.owner
+proc nameQualifierFromVarNode(varNode: NimNode): string =
+  result = ""
+  var module = varNode.owner
   if module.symKind != nskModule:
     error "Joy fields must be declared at the top level of a module"
   else:
     while module.kind == nnkSym:
-      qualifiedName = module.repr & JoyQualifiedNameSep & qualifiedName
+      result = $module & JoyQualifiedNameSep & result
       module = module.owner
-  let qualifiedNameNode = newStrLitNode(qualifiedName)
-  result = 
-    nnkStmtList.newTree(
-      nnkConstSection.newTree(
-        nnkConstDef.newTree(
-          nnkPostfix.newTree(
-            newIdentNode("*"),
-            name
-          ),
-          newEmptyNode(),
-          nnkPar.newTree(
-            nnkExprColonExpr.newTree(
-              newIdentNode("qualifiedName"),
-              qualifiedNameNode
-            )
-          )
+
+proc fieldDeclImplementation(fieldDecl: NimNode,
+                             nameQualifier: string): NimNode =
+  expectKind(fieldDecl, nnkCall)
+
+  let fieldName = fieldDecl[0]
+  expectKind(fieldName, nnkIdent)
+
+  let typeWrappedInStmtList = fieldDecl[1]
+  expectKind(typeWrappedInStmtList, nnkStmtList)
+
+  let typeExpr = typeWrappedInStmtList[0]
+
+  result =
+    nnkConstDef.newTree(
+      nnkPostfix.newTree(
+        newIdentNode("*"),
+        newIdentNode(fieldName.repr)
+      ),
+      newEmptyNode(),
+      nnkPar.newTree(
+        nnkExprColonExpr.newTree(
+          newIdentNode("qualifiedName"),
+          newStrLitNode(nameQualifier & $fieldName)
         )
       )
     )
 
-template field*(name: untyped, typ: untyped): untyped =
+macro joyFieldHelper(dummy: typed, body: untyped): untyped =
+  expectKind(dummy, nnkSym)
+  expectKind(body, nnkStmtList)
+
+  let nameQualifier = nameQualifierFromVarNode(dummy)
+
+  result = newStmtList()
+  let constSection = nnkConstSection.newTree()
+  result.add(constSection)
+  for fieldDecl in body:
+    constSection.add(fieldDeclImplementation(fieldDecl, nameQualifier))
+
+  debugEcho "==== joyFieldHelper.result\n", result.astGenRepr
+  
+template fields*(body: untyped): untyped =
   let dummy = 0
-  joyFieldHelper(name, typ, dummy)
+  joyFieldHelper(dummy, body)

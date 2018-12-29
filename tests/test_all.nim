@@ -1,18 +1,24 @@
 import macros, unittest, options
 import joy
 
-dump:
+static:
+  debugEcho "==== AST gen for test_all fields:"
+dumpAstGen:
+  const
+    name* = (qualifiedName: "joy¦test_all|name")
+    age* = (qualifiedName: "joy¦test_all|age")
+
+fields:
   name: string
   age: int
-  parents: array[0..1, Option[string]]
 
-const name* = (qualifiedName: "joy¦test_all¦name")
-field(age, int)
+#types:
+# dumpTree:
+#   Something = data[]
+#   Person = data[name]
+#   PersonWithAge = data[age] of Person 
 
-data(Person, name)
-data(PersonWithAge, name, age)
-data(Something)
-
+#[
 test "construct data and read fields":
   let fred = Person(name: "Fred", age: 12)
   check:
@@ -31,3 +37,4 @@ test "construct data and read fields":
   
   check(jill.?name == some("Jill"),
         jill.?age == none(int))
+]#
