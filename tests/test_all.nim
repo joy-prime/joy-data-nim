@@ -1,22 +1,15 @@
 import macros, unittest, options
 import joy
 
-static:
-  debugEcho "==== AST gen for test_all fields:"
-dumpAstGen:
-  const
-    name* = (qualifiedName: "joy¦test_all|name")
-    age* = (qualifiedName: "joy¦test_all|age")
-
-fields:
+attributes:
   name: string
   age: int
 
-#types:
-# dumpTree:
-#   Something = data[]
-#   Person = data[name]
-#   PersonWithAge = data[age] of Person 
+# types:
+#   dumpTree:
+#     Something = data[]
+#     Person = data[name]
+#     PersonWithAge = data[age] of Person 
 
 #[
 test "construct data and read fields":

@@ -1,9 +1,9 @@
 #
 #
 #            Joy Prime in Nim
-#        (c) Copyright 2016 Andreas Rumpf
+#        (c) Copyright 2018 Dean Thompson
 #
-#    See the file "copying.txt", included in this
+#    See the file "LICENSE.txt", included in this
 #    distribution, for details about the copyright.
 #
 
@@ -14,7 +14,7 @@
 import macros
 
 type
-  JoyField*[T] = tuple[qualifiedName: string]
+  Attribute* = tuple[qualifiedName: string, typeAst: NimNode]
 
 const JoyQualifiedNameSep* = "¦"
 
@@ -22,53 +22,63 @@ proc nameQualifierFromVarNode(varNode: NimNode): string =
   result = ""
   var module = varNode.owner
   if module.symKind != nskModule:
-    error "Joy fields must be declared at the top level of a module"
+    error "Joy Attributes must be declared at the top level of a module"
   else:
     while module.kind == nnkSym:
       result = $module & JoyQualifiedNameSep & result
       module = module.owner
 
-proc fieldDeclImplementation(fieldDecl: NimNode,
+proc attributeDeclStatements(decl: NimNode,
                              nameQualifier: string): NimNode =
-  expectKind(fieldDecl, nnkCall)
-
-  let fieldName = fieldDecl[0]
-  expectKind(fieldName, nnkIdent)
-
-  let typeWrappedInStmtList = fieldDecl[1]
+  expectKind(decl, nnkCall)
+  let name = decl[0]
+  expectKind(name, nnkIdent)
+  let typeWrappedInStmtList = decl[1]
   expectKind(typeWrappedInStmtList, nnkStmtList)
-
   let typeExpr = typeWrappedInStmtList[0]
 
-  result =
-    nnkConstDef.newTree(
-      nnkPostfix.newTree(
-        newIdentNode("*"),
-        newIdentNode(fieldName.repr)
-      ),
-      newEmptyNode(),
-      nnkPar.newTree(
-        nnkExprColonExpr.newTree(
-          newIdentNode("qualifiedName"),
-          newStrLitNode(nameQualifier & $fieldName)
+  result = nnkVarSection.newTree(
+    nnkIdentDefs.newTree(
+      nnkPragmaExpr.newTree(
+        newIdentNode($name),
+        nnkPragma.newTree(
+          newIdentNode("compileTime")
         )
-      )
+      ),
+      newIdentNode("Attribute"),
+      newEmptyNode()
     )
+  )
+  # echo "==== attributeDeclStatements ====\n", result.treeRepr
 
-macro joyFieldHelper(dummy: typed, body: untyped): untyped =
+macro attributesHelper(dummy: typed, body: untyped): untyped =
   expectKind(dummy, nnkSym)
   expectKind(body, nnkStmtList)
 
   let nameQualifier = nameQualifierFromVarNode(dummy)
 
-  result = newStmtList()
-  let constSection = nnkConstSection.newTree()
-  result.add(constSection)
-  for fieldDecl in body:
-    constSection.add(fieldDeclImplementation(fieldDecl, nameQualifier))
+  result = nnkStmtList.newTree()
+  for decl in body:
+    result.add(attributeDeclStatements(decl, nameQualifier))
 
-  debugEcho "==== joyFieldHelper.result\n", result.astGenRepr
+  # debugEcho "==== attributesHelper.result\n", result.astGenRepr
   
-template fields*(body: untyped): untyped =
+template attributes*(body: untyped): untyped =
   let dummy = 0
-  joyFieldHelper(dummy, body)
+  attributesHelper(dummy, body)
+
+macro defineAttribute(attr: static[var Attribute],
+                      name, typ: untyped): untyped =
+  attr = (qualifiedName: $name, typeAst: typ)
+  newEmptyNode()
+
+template attribute(name, typ: untyped): untyped =
+  declareAttribute(name)
+  defineAttribute(name, name, typ)
+
+# macro entity(tupleTypeName: untyped,
+#              attr: static[Attribute]): typed =
+#   let nameAst = newIdentNode(attr.name)
+#   let typeAst = attr.typeAst
+#   quote:
+#     type `tupleTypeName` = tuple[`nameAst`: `typeAst`]
