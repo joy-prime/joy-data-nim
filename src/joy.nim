@@ -12,9 +12,7 @@
 ## identifiers have Joy in their names.
 
 import macros
-
-type
-  Attribute* = tuple[qualifiedName: string, typeAst: NimNode]
+from typetraits import nil
 
 const JoyQualifiedNameSep* = "¦"
 
@@ -28,6 +26,25 @@ proc nameQualifierFromVarNode(varNode: NimNode): string =
       result = $module & JoyQualifiedNameSep & result
       module = module.owner
 
+type JoyFieldTypeClass[T] = object
+
+template declareFieldVar*(name: untyped, Field: type): untyped =
+  var name: joyFieldTypeAst(Field)
+
+type Age* = object
+
+type Name* = object
+
+proc getTypeAst(ty: type): NimNode = getType(ty)[1]
+
+macro joyFieldTypeAst*(Field: type): type = 
+  error("undeclared Joy field: " & repr(getTypeAst(Field)))
+
+template joyFieldTypeAst*(Field: type Age): type = int
+
+template joyFieldTypeAst*(Field: type Name): type = string
+
+#[
 proc attributeDeclStatements(decl: NimNode,
                              nameQualifier: string): NimNode =
   expectKind(decl, nnkCall)
@@ -36,20 +53,6 @@ proc attributeDeclStatements(decl: NimNode,
   let typeWrappedInStmtList = decl[1]
   expectKind(typeWrappedInStmtList, nnkStmtList)
   let typeExpr = typeWrappedInStmtList[0]
-
-  result = nnkVarSection.newTree(
-    nnkIdentDefs.newTree(
-      nnkPragmaExpr.newTree(
-        newIdentNode($name),
-        nnkPragma.newTree(
-          newIdentNode("compileTime")
-        )
-      ),
-      newIdentNode("Attribute"),
-      newEmptyNode()
-    )
-  )
-  # echo "==== attributeDeclStatements ====\n", result.treeRepr
 
 macro attributesHelper(dummy: typed, body: untyped): untyped =
   expectKind(dummy, nnkSym)
@@ -66,7 +69,9 @@ macro attributesHelper(dummy: typed, body: untyped): untyped =
 template attributes*(body: untyped): untyped =
   let dummy = 0
   attributesHelper(dummy, body)
+]#
 
+#[
 macro defineAttribute(attr: static[var Attribute],
                       name, typ: untyped): untyped =
   attr = (qualifiedName: $name, typeAst: typ)
@@ -82,3 +87,4 @@ template attribute(name, typ: untyped): untyped =
 #   let typeAst = attr.typeAst
 #   quote:
 #     type `tupleTypeName` = tuple[`nameAst`: `typeAst`]
+]#

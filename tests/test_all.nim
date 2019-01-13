@@ -1,9 +1,28 @@
 import macros, unittest, options
 import joy
 
+test "wip":
+  declareFieldVar(age, Age)
+  age = 42
+  echo "age=", age
+  doAssert(age == 42)
+
+  declareFieldVar(name, Name)
+  name = "Fred"
+  echo "name=", name
+  doAssert(name == "Fred")
+
+#[ Should have a nice compile error.
+type Foo = object
+
+declareFieldVar(foo, Foo) # Error: undeclared Joy field: Foo
+]#
+
+#[
 attributes:
   name: string
   age: int
+]#
 
 # types:
 #   dumpTree:
