@@ -76,7 +76,7 @@ template attribute(name, typ: untyped): untyped =
   declareAttribute(name)
   defineAttribute(name, name, typ)
 
-# macro entity(tupleTypeName: untyped,
+# macro data(tupleTypeName: untyped,
 #              attr: static[Attribute]): typed =
 #   let nameAst = newIdentNode(attr.name)
 #   let typeAst = attr.typeAst
