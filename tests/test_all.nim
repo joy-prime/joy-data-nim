@@ -1,16 +1,21 @@
 import macros, unittest, options
 import joy
 
+type Age* = object
+declareJoyFieldTypeAst(Age, int)
+
 test "wip":
   declareFieldVar(age, Age)
   age = 42
   echo "age=", age
   doAssert(age == 42)
 
+  #[
   declareFieldVar(name, Name)
   name = "Fred"
   echo "name=", name
   doAssert(name == "Fred")
+  ]#
 
 #[ Should have a nice compile error.
 type Foo = object

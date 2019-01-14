@@ -31,7 +31,6 @@ type JoyFieldTypeClass[T] = object
 template declareFieldVar*(name: untyped, Field: type): untyped =
   var name: joyFieldTypeAst(Field)
 
-type Age* = object
 
 type Name* = object
 
@@ -40,9 +39,10 @@ proc getTypeAst(ty: type): NimNode = getType(ty)[1]
 macro joyFieldTypeAst*(Field: type): type = 
   error("undeclared Joy field: " & repr(getTypeAst(Field)))
 
-template joyFieldTypeAst*(Field: type Age): type = int
-
-template joyFieldTypeAst*(Field: type Name): type = string
+# XXX: The following declaration is better, but prevented by issue #10298:
+# template declareJoyFieldTypeAst*(Field: type, FieldType: type): untyped =
+template declareJoyFieldTypeAst*(Field, FieldType: untyped): untyped =
+  template joyFieldTypeAst*(_: type Field): type = FieldType
 
 #[
 proc attributeDeclStatements(decl: NimNode,
