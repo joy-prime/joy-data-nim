@@ -1,5 +1,7 @@
 # Joy Prime in Nim
 
+**PAUSED INDEFINITELY -- instead see joy-data-kotlin**
+
 Joy Prime in Nim is a set of macros and runtime support that support
 writing Nim application-level code in a functional, incrementally typed 
 style inspired by Clojure. The goal is to provide simple, expressive,
